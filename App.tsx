@@ -1,118 +1,115 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, {useState, useEffect} from "react";
+import {Linking, ActivityIndicator} from "react-native";
+import messaging from "@react-native-firebase/messaging";
+import {NavigationContainer, useNavigation} from "@react-navigation/native";
+import {createNativeStackNavigator} from "@react-navigation/native-stack";
+import Home from "./src/home/Home";
+import Settings from "./src/settings/Settings";
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+export type AppStackParamList = {
+  Home: undefined;
+  Settings: undefined;
+};
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const Stack = createNativeStackNavigator<AppStackParamList>();
+const NAVIGATION_IDS = ["home", "settings"];
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+function buildDeepLinkFromNotificationData(data: any): string | null {
+  console.log("deep link data", data);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+  const navigationId = data?.navigationId;
+  if (!NAVIGATION_IDS.includes(navigationId)) {
+    console.log("navigationId", navigationId);
+    return null;
+  }
+  if (navigationId === "home") {
+    return "myapp://Home";
+  }
+  if (navigationId === "settings") {
+    return "myapp://Settings";
+  }
+
+  return null;
 }
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  useEffect(() => {
+    async function requestUserPermission() {
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+      if (enabled) {
+        console.log("Authorization status:", authStatus);
+        const token = await messaging().getToken();
+        console.log("FCM token:", token);
+      }
+    }
+
+    requestUserPermission();
+  }, []);
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <NavigationContainer
+      linking={{
+        prefixes: ["myapp://"],
+        config: {
+          screens: {Home: "Home", Settings: "Settings"},
+        },
+        async getInitialURL() {
+          const url = await Linking.getInitialURL();
+          if (typeof url === "string") {
+            return url;
+          }
+          //getInitialNotification: When the application is opened from a quit state.
+          const message = await messaging().getInitialNotification();
+          const deeplinkURL = buildDeepLinkFromNotificationData(message?.data);
+          if (typeof deeplinkURL === "string") {
+            return deeplinkURL;
+          }
+        },
+        subscribe(listener: (url: string) => void) {
+          const onReceiveURL = ({url}: {url: string}) => listener(url);
+
+          // Listen to incoming links from deep linking
+          const linkingSubscription = Linking.addEventListener(
+            "url",
+            onReceiveURL,
+          );
+
+          messaging().setBackgroundMessageHandler(async remoteMessage => {
+            console.log("Message handled in the background", remoteMessage);
+          });
+
+          const foreground = messaging().onMessage(async remoteMessage => {
+            console.log("A new FCM message arrived", remoteMessage);
+          });
+
+          //onNotificationOpenedApp: When the application is running, but in the background.
+          const unsubscribe = messaging().onNotificationOpenedApp(
+            remoteMessage => {
+              const url = buildDeepLinkFromNotificationData(remoteMessage.data);
+              if (typeof url === "string") {
+                listener(url);
+              }
+            },
+          );
+
+          return () => {
+            linkingSubscription.remove();
+            unsubscribe();
+            foreground();
+          };
+        },
+      }}
+      fallback={<ActivityIndicator animating />}>
+      <Stack.Navigator initialRouteName="Home">
+        <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Settings" component={Settings} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
 
 export default App;
