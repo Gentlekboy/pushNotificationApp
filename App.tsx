@@ -5,10 +5,12 @@ import {NavigationContainer, useNavigation} from "@react-navigation/native";
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
 import Home from "./src/home/Home";
 import Settings from "./src/settings/Settings";
+import LocationScreen from "./src/location/LocationScreen";
 
 export type AppStackParamList = {
   Home: undefined;
   Settings: undefined;
+  LocationScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -16,10 +18,10 @@ const NAVIGATION_IDS = ["home", "settings"];
 
 function buildDeepLinkFromNotificationData(data: any): string | null {
   console.log("deep link data", data);
+  console.log("==========================================");
 
   const navigationId = data?.navigationId;
   if (!NAVIGATION_IDS.includes(navigationId)) {
-    console.log("navigationId", navigationId);
     return null;
   }
   if (navigationId === "home") {
@@ -106,7 +108,10 @@ function App(): React.JSX.Element {
       fallback={<ActivityIndicator animating />}>
       <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home" component={Home} />
+
         <Stack.Screen name="Settings" component={Settings} />
+
+        <Stack.Screen name="LocationScreen" component={LocationScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
