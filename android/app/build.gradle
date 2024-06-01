@@ -3,6 +3,8 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 apply plugin: "com.google.gms.google-services"
 
+import org.apache.tools.ant.taskdefs.condition.Os
+
 Project background_geolocation = project(':react-native-background-geolocation')
 apply from: "${background_geolocation.projectDir}/app.gradle"
 

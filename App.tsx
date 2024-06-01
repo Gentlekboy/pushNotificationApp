@@ -6,6 +6,7 @@ import {createNativeStackNavigator} from "@react-navigation/native-stack";
 import Home from "./src/home/Home";
 import Settings from "./src/settings/Settings";
 import LocationScreen from "./src/location/LocationScreen";
+import TabNavigator from "./src/navigation/tab/TabNavigator";
 
 export type AppStackParamList = {
   Home: undefined;
@@ -106,13 +107,14 @@ function App(): React.JSX.Element {
         },
       }}
       fallback={<ActivityIndicator animating />}>
-      <Stack.Navigator initialRouteName="Home">
+      {/* <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home" component={Home} />
 
         <Stack.Screen name="Settings" component={Settings} />
 
         <Stack.Screen name="LocationScreen" component={LocationScreen} />
-      </Stack.Navigator>
+      </Stack.Navigator> */}
+      <TabNavigator />
     </NavigationContainer>
   );
 }
