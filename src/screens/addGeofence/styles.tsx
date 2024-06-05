@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
     padding: 0,
   },
   row: {
-    backgroundColor: "orange",
+    backgroundColor: "white",
     height: 50,
     flexDirection: "row",
     borderWidth: 1,
@@ -32,46 +32,18 @@ export const styles = StyleSheet.create({
     height: 0.5,
     backgroundColor: "#C4C4C4",
   },
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "white",
-  },
-  buttonText: {
-    fontFamily: "monospace",
-    fontSize: 12,
-    color: "white",
-  },
-  firstButtonContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    backgroundColor: "green",
+  text: {
+    color: "#230501",
+    fontSize: 15,
+    fontFamily: "Hind-Regular",
   },
   secondButtonContainer: {
     paddingHorizontal: 20,
     paddingVertical: 8,
     backgroundColor: "green",
     alignItems: "center",
-  },
-  text: {
-    fontFamily: "monospace",
-    fontSize: 12,
-    color: "black",
-  },
-  title: {
-    fontFamily: "monospace",
-    fontSize: 20,
-    textAlign: "center",
-    fontWeight: "700",
-    marginVertical: 4,
-    color: "black",
-  },
-  flatList: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginVertical: 4,
-    marginHorizontal: 2,
+    marginTop: 10,
+    marginBottom: 20,
+    borderRadius: 8,
   },
 });

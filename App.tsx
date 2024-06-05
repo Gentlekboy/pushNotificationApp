@@ -1,12 +1,19 @@
-import React, {useState, useEffect} from "react";
+import React, {useEffect} from "react";
 import {Linking, ActivityIndicator} from "react-native";
 import messaging from "@react-native-firebase/messaging";
-import {NavigationContainer, useNavigation} from "@react-navigation/native";
-import {createNativeStackNavigator} from "@react-navigation/native-stack";
-import Home from "./src/home/Home";
-import Settings from "./src/settings/Settings";
-import LocationScreen from "./src/location/LocationScreen";
+import {NavigationContainer} from "@react-navigation/native";
 import TabNavigator from "./src/navigation/tab/TabNavigator";
+import {
+  geoFenceAction,
+  onDisplayNotification,
+} from "./src/screens/settings/utils";
+import BackgroundGeolocation, {
+  Subscription,
+} from "react-native-background-geolocation";
+import {
+  buildDeepLinkFromNotificationData,
+  requestUserPermission,
+} from "./src/screens/map/utils";
 
 export type AppStackParamList = {
   Home: undefined;
@@ -14,43 +21,46 @@ export type AppStackParamList = {
   LocationScreen: undefined;
 };
 
-const Stack = createNativeStackNavigator<AppStackParamList>();
-const NAVIGATION_IDS = ["home", "settings"];
-
-function buildDeepLinkFromNotificationData(data: any): string | null {
-  console.log("deep link data", data);
-  console.log("==========================================");
-
-  const navigationId = data?.navigationId;
-  if (!NAVIGATION_IDS.includes(navigationId)) {
-    return null;
-  }
-  if (navigationId === "home") {
-    return "myapp://Home";
-  }
-  if (navigationId === "settings") {
-    return "myapp://Settings";
-  }
-
-  return null;
-}
-
 function App(): React.JSX.Element {
   useEffect(() => {
-    async function requestUserPermission() {
-      const authStatus = await messaging().requestPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-      if (enabled) {
-        console.log("Authorization status:", authStatus);
-        const token = await messaging().getToken();
-        console.log("FCM token:", token);
-      }
-    }
-
     requestUserPermission();
+
+    const onGeoFence: Subscription = BackgroundGeolocation.onGeofence(event => {
+      console.log("[onGeoFence]", event);
+
+      onDisplayNotification(
+        "GEOFENCE ACTIVITY DETECTED",
+        geoFenceAction(event.action, event.identifier),
+      )
+        .then(res => console.log("onDisplayNotification success", res))
+        .catch(error => console.log("onDisplayNotification error", error));
+    });
+
+    BackgroundGeolocation.ready({
+      desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
+      distanceFilter: 10,
+      stopTimeout: 5,
+      debug: true,
+      logLevel: BackgroundGeolocation.LOG_LEVEL_VERBOSE,
+      stopOnTerminate: false,
+      startOnBoot: true,
+      url: "http://yourserver.com/locations",
+      batchSync: false,
+      autoSync: true,
+      headers: {
+        "X-FOO": "bar",
+      },
+      params: {
+        auth_token: "maybe_your_server_authenticates_via_token_YES?",
+      },
+    }).then(state => {
+      console.log("- BackgroundGeolocation Status: ", state.enabled);
+    });
+
+    return () => {
+      console.log("Clearing the subscriptions");
+      onGeoFence.remove();
+    };
   }, []);
 
   return (
@@ -65,7 +75,6 @@ function App(): React.JSX.Element {
           if (typeof url === "string") {
             return url;
           }
-          //getInitialNotification: When the application is opened from a quit state.
           const message = await messaging().getInitialNotification();
           const deeplinkURL = buildDeepLinkFromNotificationData(message?.data);
           if (typeof deeplinkURL === "string") {
@@ -75,7 +84,6 @@ function App(): React.JSX.Element {
         subscribe(listener: (url: string) => void) {
           const onReceiveURL = ({url}: {url: string}) => listener(url);
 
-          // Listen to incoming links from deep linking
           const linkingSubscription = Linking.addEventListener(
             "url",
             onReceiveURL,
@@ -89,7 +97,6 @@ function App(): React.JSX.Element {
             console.log("A new FCM message arrived", remoteMessage);
           });
 
-          //onNotificationOpenedApp: When the application is running, but in the background.
           const unsubscribe = messaging().onNotificationOpenedApp(
             remoteMessage => {
               const url = buildDeepLinkFromNotificationData(remoteMessage.data);
@@ -107,13 +114,6 @@ function App(): React.JSX.Element {
         },
       }}
       fallback={<ActivityIndicator animating />}>
-      {/* <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home" component={Home} />
-
-        <Stack.Screen name="Settings" component={Settings} />
-
-        <Stack.Screen name="LocationScreen" component={LocationScreen} />
-      </Stack.Navigator> */}
       <TabNavigator />
     </NavigationContainer>
   );

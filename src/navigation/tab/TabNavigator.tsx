@@ -6,6 +6,8 @@ import MapScreen from "../../screens/map/MapScreen";
 import GeofencesScreen from "../../screens/geofences/GeofencesScreen";
 import NotificationScreen from "../../screens/notification/NotificationScreen";
 import SettingsScreen from "../../screens/settings/SettingsScreen";
+import AddGeofencesScreen from "../../screens/addGeofence/AddGeofencesScreen";
+import GeofenceNavigator from "../stack/GeofenceNavigator";
 
 const Tab = createBottomTabNavigator<TabNavigatorParamList>();
 
@@ -28,8 +30,10 @@ const TabNavigator = () => {
 
       <Tab.Screen
         name="GeoFences"
-        component={GeofencesScreen}
+        component={GeofenceNavigator}
         options={{
+          headerShown: false,
+          unmountOnBlur: true,
           tabBarLabel: "GeoFences",
           tabBarIcon: ({color, size}) => (
             <MaterialCommunityIcons name="apps" color={color} size={size} />
@@ -41,6 +45,7 @@ const TabNavigator = () => {
         name="Notifications"
         component={NotificationScreen}
         options={{
+          unmountOnBlur: true,
           tabBarLabel: "Notifications",
           tabBarIcon: ({color, size}) => (
             <MaterialCommunityIcons
@@ -57,6 +62,7 @@ const TabNavigator = () => {
         name="Settings"
         component={SettingsScreen}
         options={{
+          unmountOnBlur: true,
           tabBarLabel: "Settings",
           tabBarIcon: ({color, size}) => (
             <MaterialCommunityIcons name="settings" color={color} size={size} />
