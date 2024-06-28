@@ -1,60 +1,31 @@
 import {Switch, Text, View} from "react-native";
-import React from "react";
+import React, {useEffect} from "react";
 import {styles} from "./styles";
-import BackgroundGeolocation, {
-  Subscription,
-} from "react-native-background-geolocation";
-import {geoFenceAction, onDisplayNotification} from "./utils";
+import BackgroundGeolocation from "react-native-background-geolocation";
+import {useAppDispatch, useAppSelector} from "../../store/appStore/store";
+import {toggleBackgroundService} from "../../store/slices/settingsSlice";
 
 const SettingsScreen = () => {
-  const [enabled, setEnabled] = React.useState(false);
-  const [location, setLocation] = React.useState("");
+  const dispatch = useAppDispatch();
 
-  React.useEffect(() => {
-    const onGeoFence: Subscription = BackgroundGeolocation.onGeofence(event => {
-      onDisplayNotification(
-        "Geofence Activity Detected",
-        geoFenceAction(event.action, event.identifier),
-      )
-        .then(res => console.log("onDisplayNotification success", res))
-        .catch(error => console.log("onDisplayNotification error", error));
-    });
+  const {settingsSlice, deviceSlice} = useAppSelector(
+    state => state.rootReducer,
+  );
 
-    // BackgroundGeolocation.ready({
-    //   desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
-    //   distanceFilter: 10,
-    //   stopTimeout: 5,
-    //   debug: true,
-    //   logLevel: BackgroundGeolocation.LOG_LEVEL_VERBOSE,
-    //   stopOnTerminate: false,
-    //   startOnBoot: true,
-    //   url: "http://yourserver.com/locations",
-    //   batchSync: false,
-    //   autoSync: true,
-    //   headers: {
-    //     "X-FOO": "bar",
-    //   },
-    //   params: {
-    //     auth_token: "maybe_your_server_authenticates_via_token_YES?",
-    //   },
-    // }).then(state => {
-    //   setEnabled(state.enabled);
-    //   console.log("- BackgroundGeolocation is configured and ready: ", state);
-    // });
+  const {deviceId} = deviceSlice;
+  const {isBackgroundServiceRunning} = settingsSlice;
 
-    return () => {
-      onGeoFence.remove();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    if (enabled) {
-      BackgroundGeolocation.start();
+  useEffect(() => {
+    if (isBackgroundServiceRunning) {
+      BackgroundGeolocation.startGeofences()
+        .then(res => console.log("BackgroundGeolocation.start", res.enabled))
+        .catch(err => console.log("BackgroundGeolocation.start", err));
     } else {
-      BackgroundGeolocation.stop();
-      setLocation("");
+      BackgroundGeolocation.stop()
+        .then(res => console.log("BackgroundGeolocation.stop", res.enabled))
+        .catch(err => console.log("BackgroundGeolocation.stop", err));
     }
-  }, [enabled]);
+  }, [isBackgroundServiceRunning]);
 
   return (
     <View style={styles.container}>
@@ -63,13 +34,28 @@ const SettingsScreen = () => {
           <Text style={styles.title}>Location Services</Text>
 
           <Text style={styles.description}>
-            {enabled
+            {isBackgroundServiceRunning
               ? "Turn off location services"
               : "Turn on location services"}
           </Text>
         </View>
 
-        <Switch value={enabled} onValueChange={setEnabled} />
+        <View>
+          <Switch
+            value={isBackgroundServiceRunning}
+            onValueChange={() => {
+              dispatch(toggleBackgroundService());
+            }}
+          />
+        </View>
+      </View>
+
+      <View>
+        <Text style={styles.version}>Version 1.0.0</Text>
+
+        <Text style={[styles.version, {fontSize: 10, marginBottom: 10}]}>
+          {deviceId ? "FCM token retrieved" : "No FCM token yet"}
+        </Text>
       </View>
     </View>
   );

@@ -1,24 +1,13 @@
 import {FlatList, Text, TouchableOpacity, View} from "react-native";
-import React, {useEffect} from "react";
-import {GooglePlacesAutocomplete} from "react-native-google-places-autocomplete";
+import React from "react";
 import {styles} from "./styles";
-import BackgroundGeolocation, {
-  Geofence,
-} from "react-native-background-geolocation";
 import {GeofencesScreenNavProps} from "./types";
+import {useAppSelector} from "../../store/appStore/store";
 
 const GeofencesScreen = ({navigation}: GeofencesScreenNavProps) => {
-  const [geoFenceList, setGeoFenceList] = React.useState<Geofence[]>([]);
-
-  useEffect(() => {
-    BackgroundGeolocation.getGeofences()
-      .then(geofences => {
-        setGeoFenceList(geofences);
-      })
-      .catch(error => {
-        console.log("[getGeoFence] error", error);
-      });
-  }, []);
+  const {listOfGeofences: geoFenceList} = useAppSelector(
+    state => state.rootReducer.goefenceSlice,
+  );
 
   if (geoFenceList.length < 1) {
     return (
@@ -39,11 +28,11 @@ const GeofencesScreen = ({navigation}: GeofencesScreenNavProps) => {
       <FlatList
         data={geoFenceList}
         renderItem={({item, index}) => {
-          const {identifier} = item;
+          const {name} = item;
           return (
             <View style={styles.flatList}>
               <Text style={styles.text}>{index + 1}</Text>
-              <Text style={styles.text}>{identifier}</Text>
+              <Text style={styles.text}>{name}</Text>
             </View>
           );
         }}

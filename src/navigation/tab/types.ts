@@ -1,6 +1,6 @@
 export type TabNavigatorParamList = {
   Home: undefined;
-  GeoFences: undefined;
+  GeofenceList: undefined;
   Notifications: undefined;
   Settings: undefined;
 };

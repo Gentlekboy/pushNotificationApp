@@ -1,16 +1,16 @@
 import messaging from "@react-native-firebase/messaging";
 
-export const requestUserPermission = async () => {
-  const authStatus = await messaging().requestPermission();
-  const enabled =
-    authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-    authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+// export const requestUserPermission = async () => {
+//   const authStatus = await messaging().requestPermission();
+//   const enabled =
+//     authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+//     authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-  if (enabled) {
-    const token = await messaging().getToken();
-    console.log("FCM token:", token);
-  }
-};
+//   if (enabled) {
+//     const token = await messaging().getToken();
+//     console.log("FCM token:", token);
+//   }
+// };
 
 export const buildDeepLinkFromNotificationData = (data: any): string | null => {
   const NAVIGATION_IDS = ["home", "settings"];

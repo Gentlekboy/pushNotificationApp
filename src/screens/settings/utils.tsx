@@ -3,13 +3,13 @@ import notifee from "@notifee/react-native";
 export const geoFenceAction = (action: string, place: string) => {
   switch (action) {
     case "ENTER":
-      return `You have entered ${place}`;
+      return `You have entered ${place}. Getting deals in a bit.`;
 
     case "EXIT":
-      return `You have exited ${place}`;
+      return `You have exited '${place}'`;
 
     default:
-      return `You are dwelling in ${place}`;
+      return `You are dwelling in '${place}'`;
   }
 };
 

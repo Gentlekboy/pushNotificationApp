@@ -7,17 +7,21 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "test": "jest",
-    "clean": "react-native start",
-    "android-linux": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res && react-native run-android",
-    "build-android": "cd android && ./gradlew assembleDebug"
+    "clean": "cd android && ./gradlew clean && cd .. && react-native start --reset-cache",
+    "prebuild": "cd android && ./gradlew clean && cd .. && react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res && react-native run-android",
+    "bundleAssets": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res && react-native run-android",
+    "debugAndroid": "cd android && ./gradlew clean && ./gradlew assembleDebug",
+    "releaseAndroid": "cd android && ./gradlew clean && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@notifee/react-native": "^7.8.2",
+    "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-native-firebase/app": "^19.2.2",
     "@react-native-firebase/messaging": "^19.2.2",
     "@react-navigation/bottom-tabs": "^6.5.20",
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
+    "@reduxjs/toolkit": "^2.2.5",
     "react": "18.2.0",
     "react-native": "0.74.0",
     "react-native-background-fetch": "^4.2.5",
@@ -26,7 +30,9 @@
     "react-native-maps": "^1.15.6",
     "react-native-safe-area-context": "^4.10.1",
     "react-native-screens": "^3.31.1",
-    "react-native-vector-icons": "^10.1.0"
+    "react-native-vector-icons": "^10.1.0",
+    "react-redux": "^9.1.2",
+    "redux-persist": "^6.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
