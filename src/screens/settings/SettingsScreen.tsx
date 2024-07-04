@@ -1,5 +1,5 @@
 import {Switch, Text, View} from "react-native";
-import React, {useEffect} from "react";
+import React, {useEffect, useRef} from "react";
 import {styles} from "./styles";
 import BackgroundGeolocation from "react-native-background-geolocation";
 import {useAppDispatch, useAppSelector} from "../../store/appStore/store";
@@ -15,16 +15,26 @@ const SettingsScreen = () => {
   const {deviceId} = deviceSlice;
   const {isBackgroundServiceRunning} = settingsSlice;
 
+  const prevIsBackgroundServiceRunning = useRef(isBackgroundServiceRunning);
+
   useEffect(() => {
-    if (isBackgroundServiceRunning) {
-      BackgroundGeolocation.startGeofences()
+    if (
+      prevIsBackgroundServiceRunning.current === false &&
+      isBackgroundServiceRunning === true
+    ) {
+      BackgroundGeolocation.start()
         .then(res => console.log("BackgroundGeolocation.start", res.enabled))
         .catch(err => console.log("BackgroundGeolocation.start", err));
-    } else {
+    } else if (
+      prevIsBackgroundServiceRunning.current === true &&
+      isBackgroundServiceRunning === false
+    ) {
       BackgroundGeolocation.stop()
         .then(res => console.log("BackgroundGeolocation.stop", res.enabled))
         .catch(err => console.log("BackgroundGeolocation.stop", err));
     }
+
+    prevIsBackgroundServiceRunning.current = isBackgroundServiceRunning;
   }, [isBackgroundServiceRunning]);
 
   return (
@@ -51,7 +61,7 @@ const SettingsScreen = () => {
       </View>
 
       <View>
-        <Text style={styles.version}>Version 1.0.0</Text>
+        <Text style={styles.version}>Version 1.0.1</Text>
 
         <Text style={[styles.version, {fontSize: 10, marginBottom: 10}]}>
           {deviceId ? "FCM token retrieved" : "No FCM token yet"}

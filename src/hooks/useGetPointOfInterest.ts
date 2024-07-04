@@ -6,7 +6,7 @@ import BackgroundGeolocation, {
 import {Alert} from "react-native";
 
 const useGetPointOfInterest = () => {
-  const [getPointOfInterest, {isFetching}] = useLazyGetPointOfInterestQuery();
+  const [getPointOfInterest] = useLazyGetPointOfInterestQuery();
 
   const onGetPointOfInterest = useCallback(() => {
     getPointOfInterest()
@@ -48,7 +48,7 @@ const useGetPointOfInterest = () => {
       });
   }, [getPointOfInterest]);
 
-  return {onGetPointOfInterest, isFetching};
+  return {onGetPointOfInterest};
 };
 
 export default useGetPointOfInterest;

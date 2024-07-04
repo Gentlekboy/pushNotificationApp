@@ -1,4 +1,4 @@
-import {ActivityIndicator, View} from "react-native";
+import {View} from "react-native";
 import React, {useEffect} from "react";
 import {styles} from "./styles";
 import MapView, {Circle} from "react-native-maps";
@@ -6,7 +6,7 @@ import useGetPointOfInterest from "../../hooks/useGetPointOfInterest";
 import {useAppSelector} from "../../store/appStore/store";
 
 const MapScreen = () => {
-  const {onGetPointOfInterest, isFetching} = useGetPointOfInterest();
+  const {onGetPointOfInterest} = useGetPointOfInterest();
 
   const {listOfGeofences} = useAppSelector(
     state => state.rootReducer.goefenceSlice,
@@ -18,14 +18,9 @@ const MapScreen = () => {
 
   return (
     <View style={styles.container}>
-      {isFetching ? (
-        <View style={{marginVertical: 20}}>
-          <ActivityIndicator size="small" color="#000" />
-        </View>
-      ) : null}
-
       <MapView
         style={styles.map}
+        loadingEnabled={true}
         initialRegion={undefined}
         showsUserLocation={true}
         showsMyLocationButton={true}

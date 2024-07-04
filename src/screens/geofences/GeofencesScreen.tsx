@@ -1,22 +1,17 @@
-import {FlatList, Text, TouchableOpacity, View} from "react-native";
+import {FlatList, Text, View} from "react-native";
 import React from "react";
 import {styles} from "./styles";
-import {GeofencesScreenNavProps} from "./types";
 import {useAppSelector} from "../../store/appStore/store";
 
-const GeofencesScreen = ({navigation}: GeofencesScreenNavProps) => {
+const GeofencesScreen = () => {
   const {listOfGeofences: geoFenceList} = useAppSelector(
     state => state.rootReducer.goefenceSlice,
   );
 
   if (geoFenceList.length < 1) {
     return (
-      <View style={styles.container}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("AddGeofence")}
-          style={styles.firstButtonContainer}>
-          <Text style={styles.buttonText}>Add a location</Text>
-        </TouchableOpacity>
+      <View style={[styles.container, styles.firstButtonContainer]}>
+        <Text style={styles.buttonText}>No Geofences added yet</Text>
       </View>
     );
   }

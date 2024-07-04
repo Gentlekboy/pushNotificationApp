@@ -3,16 +3,13 @@ import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
 import {TabNavigatorParamList} from "./types";
 import MaterialCommunityIcons from "react-native-vector-icons/Ionicons";
 import MapScreen from "../../screens/map/MapScreen";
-import NotificationScreen from "../../screens/notification/NotificationScreen";
 import SettingsScreen from "../../screens/settings/SettingsScreen";
 import messaging from "@react-native-firebase/messaging";
 import {useAppDispatch, useAppSelector} from "../../store/appStore/store";
 import {saveFcmToken} from "../../store/slices/deviceSlice";
 import GeofencesScreen from "../../screens/geofences/GeofencesScreen";
 import useSendPush from "../../hooks/useSendPush";
-import BackgroundGeolocation, {
-  Subscription,
-} from "react-native-background-geolocation";
+import BackgroundGeolocation from "react-native-background-geolocation";
 import {
   geoFenceAction,
   onDisplayNotification,
@@ -55,7 +52,7 @@ const TabNavigator = () => {
     };
 
     requestUserPermission();
-  }, [messaging]);
+  }, [messaging, deviceId]);
 
   useEffect(() => {
     BackgroundGeolocation.ready({
@@ -72,27 +69,56 @@ const TabNavigator = () => {
       })
       .catch(error => console.log("Background location ready failed", error));
 
-    BackgroundGeolocation.onGeofence(event => {
-      const message = geoFenceAction(
-        event.action,
-        event.extras?.name as string,
-      );
+    const onGeofenceChangeSubscription = BackgroundGeolocation.onGeofence(
+      event => {
+        const {action, identifier, extras} = event;
 
-      if (event.action === "ENTER") {
-        if (deviceId) {
-          onSendPush({poiId: event.identifier, userOrDeviceId: deviceId});
+        const message = geoFenceAction(action, extras?.name as string);
+
+        if (action === "ENTER") {
+          console.log("[onLocationSubscription for ENTER] ", event);
+
+          if (deviceId) {
+            onSendPush({poiId: identifier, userOrDeviceId: deviceId});
+          } else {
+            onDisplayNotification("No FCM token", message);
+          }
         } else {
-          onDisplayNotification("No FCM token", message);
-        }
-      }
+          console.log("[onLocationSubscription for OTHERS] ", event);
 
-      onDisplayNotification("Geofence Activity Detected", message);
-    });
+          onDisplayNotification("Geofence Activity Detected", message);
+        }
+      },
+    );
+
+    const onGeofencesChangeSubscription =
+      BackgroundGeolocation.onGeofencesChange(event => {
+        let on = event.on;
+        let off = event.off;
+
+        on.forEach(geofence => {
+          console.log("[new geofences activated] ", geofence);
+        });
+
+        off.forEach(identifier => {
+          console.log("[geofences that were just de-activated] ", identifier);
+        });
+      });
+
+    const onLocationSubscription = BackgroundGeolocation.onLocation(
+      event => {},
+    );
+
+    return () => {
+      onLocationSubscription.remove();
+      onGeofencesChangeSubscription.remove();
+      onGeofenceChangeSubscription.remove();
+    };
   }, []);
 
   useEffect(() => {
     if (isBackgroundServiceRunning) {
-      BackgroundGeolocation.startGeofences()
+      BackgroundGeolocation.start()
         .then(res => console.log("BackgroundGeolocation.start", res.enabled))
         .catch(err => console.log("BackgroundGeolocation.start", err));
     } else {
@@ -130,23 +156,6 @@ const TabNavigator = () => {
           ),
         }}
       />
-
-      {/* <Tab.Screen
-        name="Notifications"
-        component={NotificationScreen}
-        options={{
-          unmountOnBlur: true,
-          tabBarLabel: "Notifications",
-          tabBarIcon: ({color, size}) => (
-            <MaterialCommunityIcons
-              name="notifications"
-              color={color}
-              size={size}
-            />
-          ),
-          tabBarBadge: 3,
-        }}
-      /> */}
 
       <Tab.Screen
         name="Settings"

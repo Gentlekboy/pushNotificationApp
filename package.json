@@ -7,8 +7,7 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "test": "jest",
-    "clean": "cd android && ./gradlew clean && cd .. && react-native start --reset-cache",
-    "prebuild": "cd android && ./gradlew clean && cd .. && react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res && react-native run-android",
+    "clean": "watchman watch-del-all && cd android && chmod +x gradlew && ./gradlew clean && cd ..",
     "bundleAssets": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res && react-native run-android",
     "debugAndroid": "cd android && ./gradlew clean && ./gradlew assembleDebug",
     "releaseAndroid": "cd android && ./gradlew clean && ./gradlew bundleRelease"
