@@ -1,11 +1,13 @@
-import React, {useState, useEffect} from "react";
+import React, {useEffect} from "react";
 import {Linking, ActivityIndicator} from "react-native";
 import messaging from "@react-native-firebase/messaging";
-import {NavigationContainer, useNavigation} from "@react-navigation/native";
-import {createNativeStackNavigator} from "@react-navigation/native-stack";
-import Home from "./src/home/Home";
-import Settings from "./src/settings/Settings";
-import LocationScreen from "./src/location/LocationScreen";
+import {NavigationContainer} from "@react-navigation/native";
+import TabNavigator from "./src/navigation/tab/TabNavigator";
+import {PersistGate} from "redux-persist/integration/react";
+import {Provider as ReduxProvider} from "react-redux";
+import {buildDeepLinkFromNotificationData} from "./src/screens/map/utils";
+import store, {persistor} from "./src/store/appStore/store";
+import {onDisplayNotification} from "./src/screens/settings/utils";
 
 export type AppStackParamList = {
   Home: undefined;
@@ -13,107 +15,83 @@ export type AppStackParamList = {
   LocationScreen: undefined;
 };
 
-const Stack = createNativeStackNavigator<AppStackParamList>();
-const NAVIGATION_IDS = ["home", "settings"];
-
-function buildDeepLinkFromNotificationData(data: any): string | null {
-  console.log("deep link data", data);
-  console.log("==========================================");
-
-  const navigationId = data?.navigationId;
-  if (!NAVIGATION_IDS.includes(navigationId)) {
-    return null;
-  }
-  if (navigationId === "home") {
-    return "myapp://Home";
-  }
-  if (navigationId === "settings") {
-    return "myapp://Settings";
-  }
-
-  return null;
-}
-
 function App(): React.JSX.Element {
-  useEffect(() => {
-    async function requestUserPermission() {
-      const authStatus = await messaging().requestPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-      if (enabled) {
-        console.log("Authorization status:", authStatus);
-        const token = await messaging().getToken();
-        console.log("FCM token:", token);
-      }
-    }
-
-    requestUserPermission();
-  }, []);
-
   return (
-    <NavigationContainer
-      linking={{
-        prefixes: ["myapp://"],
-        config: {
-          screens: {Home: "Home", Settings: "Settings"},
-        },
-        async getInitialURL() {
-          const url = await Linking.getInitialURL();
-          if (typeof url === "string") {
-            return url;
-          }
-          //getInitialNotification: When the application is opened from a quit state.
-          const message = await messaging().getInitialNotification();
-          const deeplinkURL = buildDeepLinkFromNotificationData(message?.data);
-          if (typeof deeplinkURL === "string") {
-            return deeplinkURL;
-          }
-        },
-        subscribe(listener: (url: string) => void) {
-          const onReceiveURL = ({url}: {url: string}) => listener(url);
-
-          // Listen to incoming links from deep linking
-          const linkingSubscription = Linking.addEventListener(
-            "url",
-            onReceiveURL,
-          );
-
-          messaging().setBackgroundMessageHandler(async remoteMessage => {
-            console.log("Message handled in the background", remoteMessage);
-          });
-
-          const foreground = messaging().onMessage(async remoteMessage => {
-            console.log("A new FCM message arrived", remoteMessage);
-          });
-
-          //onNotificationOpenedApp: When the application is running, but in the background.
-          const unsubscribe = messaging().onNotificationOpenedApp(
-            remoteMessage => {
-              const url = buildDeepLinkFromNotificationData(remoteMessage.data);
+    <ReduxProvider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <NavigationContainer
+          linking={{
+            prefixes: ["myapp://"],
+            config: {
+              screens: {Home: "Home", Settings: "Settings"},
+            },
+            async getInitialURL() {
+              const url = await Linking.getInitialURL();
               if (typeof url === "string") {
-                listener(url);
+                return url;
+              }
+              const message = await messaging().getInitialNotification();
+              const deeplinkURL = buildDeepLinkFromNotificationData(
+                message?.data,
+              );
+              if (typeof deeplinkURL === "string") {
+                return deeplinkURL;
               }
             },
-          );
+            subscribe(listener: (url: string) => void) {
+              const onReceiveURL = ({url}: {url: string}) => listener(url);
 
-          return () => {
-            linkingSubscription.remove();
-            unsubscribe();
-            foreground();
-          };
-        },
-      }}
-      fallback={<ActivityIndicator animating />}>
-      <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home" component={Home} />
+              const linkingSubscription = Linking.addEventListener(
+                "url",
+                onReceiveURL,
+              );
 
-        <Stack.Screen name="Settings" component={Settings} />
+              messaging().setBackgroundMessageHandler(async remoteMessage => {
+                console.log("Message handled in the background", remoteMessage);
 
-        <Stack.Screen name="LocationScreen" component={LocationScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+                const title =
+                  remoteMessage.notification?.title ||
+                  "Message handled in the background";
+                const body =
+                  remoteMessage.notification?.body ||
+                  `${remoteMessage.notification}`;
+                onDisplayNotification(title, body);
+              });
+
+              const foreground = messaging().onMessage(async remoteMessage => {
+                console.log("A new FCM message arrived", remoteMessage);
+
+                const title =
+                  remoteMessage.notification?.title || "New FCM message";
+                const body =
+                  remoteMessage.notification?.body ||
+                  `${remoteMessage.notification}`;
+                onDisplayNotification(title, body);
+              });
+
+              const unsubscribe = messaging().onNotificationOpenedApp(
+                remoteMessage => {
+                  const url = buildDeepLinkFromNotificationData(
+                    remoteMessage.data,
+                  );
+                  if (typeof url === "string") {
+                    listener(url);
+                  }
+                },
+              );
+
+              return () => {
+                linkingSubscription.remove();
+                unsubscribe();
+                foreground();
+              };
+            },
+          }}
+          fallback={<ActivityIndicator animating />}>
+          <TabNavigator />
+        </NavigationContainer>
+      </PersistGate>
+    </ReduxProvider>
   );
 }
 
